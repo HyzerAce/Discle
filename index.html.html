@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DISCLE — Daily Disc Golf Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --forest: #152B1E;
+    --forest-mid: #1E3D2A;
+    --forest-light: #2A5238;
+    --birch: #F0EBE1;
+    --birch-dim: #C9C3B8;
+    --chains: #A8A89A;
+    --orange: #E8621A;
+    --orange-dim: #b84e14;
+    --sky: #7DB5D4;
+    --correct: #4CAF7D;
+    --wrong: #6B3A3A;
+    --text-main: #F0EBE1;
+    --text-muted: #8FAF96;
+  }
+
+  body {
+    background: var(--forest);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(125,181,212,0.07) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px);
+  }
+
+  /* HEADER */
+  header {
+    width: 100%;
+    max-width: 640px;
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: 0.08em; color: var(--birch); line-height: 1; }
+  .logo span { color: var(--orange); }
+  .subtitle { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .icon-btn {
+    background: var(--forest-mid); border: 1px solid var(--forest-light);
+    color: var(--birch-dim); width: 36px; height: 36px; border-radius: 8px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background: var(--forest-light); color: var(--birch); }
+
+  /* LOADING */
+  .loading-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 60vh; gap: 16px;
+  }
+  .loading-disc {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 3px solid var(--forest-light); border-top-color: var(--orange);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; color: var(--text-muted); }
+
+  /* DISC VISUAL */
+  .disc-area { margin: 20px auto 0; position: relative; width: 140px; height: 140px; }
+  .disc-svg { width: 140px; height: 140px; }
+
+  /* CONTEXT CARD */
+  .context-card {
+    margin: 14px auto 0; max-width: 640px; width: calc(100% - 32px);
+    background: var(--forest-mid); border: 1px solid var(--forest-light);
+    border-radius: 14px; padding: 12px 20px;
+    display: flex; gap: 0; justify-content: space-around;
+  }
+  .ctx-item { text-align: center; flex: 1; }
+  .ctx-divider { width: 1px; background: var(--forest-light); margin: 4px 0; }
+  .ctx-label { font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+  .ctx-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.05em; color: var(--birch); }
+  .ctx-badge {
+    display: inline-block; font-size: 0.6rem; padding: 2px 7px;
+    border-radius: 20px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px;
+    font-weight: 600;
+  }
+  .ctx-badge.yes { background: rgba(76,175,125,0.2); color: var(--correct); border: 1px solid rgba(76,175,125,0.3); }
+  .ctx-badge.no { background: rgba(107,58,58,0.2); color: #C08080; border: 1px solid rgba(107,58,58,0.3); }
+
+  /* CLUE GRID */
+  .clues-area {
+    max-width: 640px; width: calc(100% - 32px);
+    margin: 12px auto 0; display: grid;
+    grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .clue-card {
+    background: var(--forest-mid); border: 1px solid var(--forest-light);
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 5px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.3s; min-height: 76px; justify-content: center;
+  }
+  .clue-card.locked { opacity: 0.4; }
+  .clue-card.revealed { border-color: var(--orange); animation: revealPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .clue-card.revealed-old { border-color: rgba(232,98,26,0.4); }
+  @keyframes revealPop { 0%{transform:scale(0.95);opacity:0.5} 100%{transform:scale(1);opacity:1} }
+  .clue-number { position: absolute; top: 7px; right: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--forest-light); line-height: 1; }
+  .clue-card.revealed .clue-number, .clue-card.revealed-old .clue-number { color: rgba(232,98,26,0.25); }
+  .clue-type { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); }
+  .clue-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--birch); line-height: 1.1; }
+  .clue-card.locked .clue-value { font-size: 1rem; color: var(--forest-light); font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0.06em; }
+
+  /* GUESS SLOTS */
+  .guess-area { max-width: 640px; width: calc(100% - 32px); margin: 12px auto 0; }
+  .guess-label { font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px; }
+  .guess-slots { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .guess-slot {
+    height: 42px; border-radius: 10px; border: 1px solid var(--forest-light);
+    background: var(--forest-mid); display: flex; align-items: center;
+    padding: 0 14px; font-size: 0.88rem; color: var(--text-muted);
+    font-style: italic; position: relative; transition: all 0.2s;
+  }
+  .guess-slot.correct { background: rgba(76,175,125,0.15); border-color: var(--correct); color: var(--correct); font-style: normal; font-weight: 600; }
+  .guess-slot.wrong { background: rgba(107,58,58,0.2); border-color: #7A4A4A; color: #C08080; font-style: normal; }
+  .guess-slot.active { border-color: var(--orange); color: var(--birch); font-style: normal; }
+  .guess-slot .slot-icon { position: absolute; right: 12px; font-size: 0.95rem; }
+
+  /* INPUT */
+  .input-wrap { display: flex; gap: 8px; position: relative; }
+  .disc-input {
+    flex: 1; height: 48px; border-radius: 10px; border: 1px solid var(--forest-light);
+    background: var(--forest-mid); color: var(--birch);
+    font-family: 'Inter', sans-serif; font-size: 0.95rem; padding: 0 16px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .disc-input:focus { border-color: var(--orange); }
+  .disc-input::placeholder { color: var(--text-muted); }
+  .disc-input:disabled { opacity: 0.4; cursor: not-allowed; }
+  .guess-btn {
+    height: 48px; padding: 0 20px; background: var(--orange); color: white;
+    border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem; letter-spacing: 0.08em; cursor: pointer;
+    transition: background 0.15s, transform 0.1s; white-space: nowrap;
+  }
+  .guess-btn:hover { background: var(--orange-dim); }
+  .guess-btn:active { transform: scale(0.97); }
+  .guess-btn:disabled { background: var(--forest-light); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  /* AUTOCOMPLETE */
+  .autocomplete-list {
+    position: absolute; bottom: 52px; left: 0; right: 80px;
+    background: #1A3828; border: 1px solid var(--orange);
+    border-radius: 10px; overflow: hidden; z-index: 100;
+    max-height: 210px; overflow-y: auto;
+  }
+  .autocomplete-list:empty { display: none; }
+  .ac-item {
+    padding: 9px 14px; cursor: pointer; font-size: 0.88rem;
+    display: flex; flex-direction: column; gap: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.1s;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.ac-selected { background: rgba(232,98,26,0.2); }
+  .ac-item-name { color: var(--birch); font-weight: 600; }
+  .ac-item-sub { color: var(--text-muted); font-size: 0.72rem; }
+
+  /* RESULT SCREEN */
+  .result-screen {
+    display: none; max-width: 640px; width: calc(100% - 32px);
+    margin: 0 auto; padding-bottom: 32px;
+  }
+  .result-screen.show { display: block; }
+
+  .result-hero {
+    border-radius: 16px; padding: 22px; text-align: center; margin-bottom: 12px;
+  }
+  .result-hero.win { background: rgba(76,175,125,0.1); border: 1px solid rgba(76,175,125,0.35); }
+  .result-hero.lose { background: rgba(107,58,58,0.15); border: 1px solid rgba(107,58,58,0.4); }
+  .result-headline { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .result-hero.win .result-headline { color: var(--correct); }
+  .result-hero.lose .result-headline { color: #C08080; }
+  .result-subline { font-size: 0.82rem; color: var(--birch-dim); margin-bottom: 14px; }
+
+  .disc-reveal-card {
+    background: var(--forest); border: 1px solid var(--forest-light);
+    border-radius: 12px; padding: 14px 18px; margin: 0 auto 12px;
+    max-width: 320px;
+  }
+  .disc-reveal-name { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; color: var(--birch); line-height: 1; }
+  .disc-reveal-mfr { font-size: 0.78rem; color: var(--text-muted); margin: 3px 0 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .disc-reveal-flights {
+    display: flex; gap: 8px; justify-content: center; margin-top: 8px;
+  }
+  .flight-pill {
+    background: var(--forest-mid); border: 1px solid var(--forest-light);
+    border-radius: 8px; padding: 5px 10px; text-align: center; min-width: 48px;
+  }
+  .flight-pill-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--orange); line-height: 1; }
+  .flight-pill-label { font-size: 0.52rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .guess-trail { display: flex; gap: 6px; justify-content: center; margin: 10px 0 4px; font-size: 1.3rem; }
+
+  /* ACTION CARDS */
+  .action-card {
+    background: var(--forest-mid); border: 1px solid var(--forest-light);
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 10px;
+  }
+  .action-title { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; text-align: center; }
+
+  /* I THROW THIS */
+  .throw-buttons { display: flex; gap: 10px; }
+  .throw-btn {
+    flex: 1; height: 46px; border-radius: 10px; border: 1px solid var(--forest-light);
+    background: var(--forest); color: var(--birch-dim);
+    font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .throw-btn:hover { border-color: var(--orange); color: var(--birch); }
+  .throw-btn.selected-yes { background: rgba(76,175,125,0.15); border-color: var(--correct); color: var(--correct); }
+  .throw-btn.selected-no { background: rgba(107,58,58,0.15); border-color: #7A4A4A; color: #C08080; }
+  .throw-stat { text-align: center; margin-top: 10px; font-size: 0.78rem; color: var(--text-muted); display: none; }
+  .throw-stat.show { display: block; }
+  .throw-stat strong { color: var(--birch); }
+
+  /* DIFFICULTY */
+  .diff-buttons { display: flex; gap: 8px; }
+  .diff-btn {
+    flex: 1; height: 52px; border-radius: 10px; border: 1px solid var(--forest-light);
+    background: var(--forest); cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  }
+  .diff-btn:hover { border-color: var(--orange); }
+  .diff-btn.selected { border-color: var(--orange); background: rgba(232,98,26,0.12); }
+  .diff-emoji { font-size: 1.3rem; }
+  .diff-label { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+  .diff-result { text-align: center; margin-top: 10px; font-size: 0.78rem; color: var(--text-muted); display: none; }
+  .diff-result.show { display: block; }
+  .diff-bar { display: flex; gap: 4px; margin-top: 6px; height: 6px; border-radius: 4px; overflow: hidden; }
+  .diff-bar-seg { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .diff-bar-seg.easy { background: var(--correct); }
+  .diff-bar-seg.medium { background: var(--orange); }
+  .diff-bar-seg.hard { background: #C08080; }
+  .diff-bar-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.65rem; color: var(--text-muted); }
+
+  /* BOTTOM ACTIONS */
+  .bottom-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+  .action-btn {
+    width: 100%; height: 48px; border-radius: 10px; border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.08em;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.15s;
+  }
+  .action-btn.primary { background: var(--orange); color: white; }
+  .action-btn.primary:hover { background: var(--orange-dim); }
+  .action-btn.secondary { background: var(--forest-mid); border: 1px solid var(--forest-light); color: var(--birch-dim); }
+  .action-btn.secondary:hover { border-color: var(--orange); color: var(--birch); }
+
+  /* COUNTDOWN */
+  .countdown-wrap { text-align: center; margin-top: 14px; padding-bottom: 8px; }
+  .countdown-label { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+  .countdown-time { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.12em; color: var(--birch); }
+
+  /* ARCHIVE MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 500; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--forest-mid); border: 1px solid var(--forest-light);
+    border-radius: 16px; padding: 24px; max-width: 500px; width: 100%;
+    position: relative; max-height: 85vh; overflow-y: auto;
+  }
+  .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: 0.08em; color: var(--orange); margin-bottom: 4px; }
+  .modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--chains); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+  .modal p { color: var(--birch-dim); font-size: 0.88rem; line-height: 1.6; margin-bottom: 10px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 14px 0; }
+  .stat-box { background: var(--forest); border-radius: 10px; padding: 12px 8px; text-align: center; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; color: var(--birch); line-height: 1; }
+  .stat-label { font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+  .guess-dist { margin-top: 14px; }
+  .dist-label { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .dist-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 0.8rem; }
+  .dist-num { width: 16px; color: var(--text-muted); text-align: right; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; }
+  .dist-bar-wrap { flex: 1; height: 22px; background: var(--forest); border-radius: 4px; overflow: hidden; }
+  .dist-bar-fill { height: 100%; background: var(--forest-light); border-radius: 4px; min-width: 4px; transition: width 0.6s ease; display: flex; align-items: center; padding-left: 8px; }
+  .dist-bar-fill.highlight { background: var(--orange); }
+  .dist-bar-fill span { font-size: 0.72rem; color: var(--birch); font-weight: 600; }
+
+  /* ARCHIVE CALENDAR */
+  .archive-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-top: 12px; }
+  .archive-day {
+    aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1rem;
+    cursor: pointer; border: 1px solid var(--forest-light); background: var(--forest);
+    color: var(--text-muted); transition: all 0.15s;
+  }
+  .archive-day.played-win { background: rgba(76,175,125,0.2); border-color: var(--correct); color: var(--correct); }
+  .archive-day.played-lose { background: rgba(107,58,58,0.2); border-color: #7A4A4A; color: #C08080; }
+  .archive-day.today { border-color: var(--orange); color: var(--orange); }
+  .archive-day.future { opacity: 0.2; cursor: default; }
+  .archive-day:not(.future):not(.today):hover { border-color: var(--orange); color: var(--birch); }
+  .archive-month-label { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 6px; }
+
+  /* ARCHIVE GAME */
+  .archive-game-header {
+    background: var(--forest); border: 1px solid var(--forest-light);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .archive-game-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  .archive-game-date { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--birch); }
+  .back-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.82rem; display: flex; align-items: center; gap: 4px; }
+  .back-btn:hover { color: var(--birch); }
+
+  /* HOW TO PLAY */
+  .how-step { background: var(--forest); border-radius: 8px; padding: 10px 14px; margin: 6px 0; font-size: 0.84rem; color: var(--birch); border-left: 3px solid var(--orange); }
+  .how-step span { color: var(--text-muted); display: block; font-size: 0.72rem; margin-bottom: 2px; }
+
+  footer { max-width: 640px; width: 100%; text-align: center; padding: 20px 0 28px; color: var(--text-muted); font-size: 0.68rem; letter-spacing: 0.06em; }
+
+  @media (max-width: 420px) {
+    .logo { font-size: 2rem; }
+    .ctx-value { font-size: 1rem; }
+    .clue-value { font-size: 1.3rem; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">DIS<span>C</span>LE</div>
+    <div class="subtitle">Daily Disc Golf Challenge</div>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" onclick="openModal('stats')" title="Stats">📊</button>
+    <button class="icon-btn" onclick="openModal('archive')" title="Archive">📅</button>
+    <button class="icon-btn" onclick="openModal('how')" title="How to Play">❓</button>
+  </div>
+</header>
+
+<!-- MAIN GAME AREA -->
+<div id="mainGame" style="width:100%;max-width:640px;">
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-disc"></div>
+    <div class="loading-text">Loading today's disc…</div>
+  </div>
+
+  <div id="gameContent" style="display:none; width:100%;">
+    <!-- Disc SVG -->
+    <div class="disc-area" style="margin:18px auto 0;">
+      <svg class="disc-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="70" cy="70" r="65" fill="#1E3D2A" stroke="#2A5238" stroke-width="1.5"/>
+        <circle cx="70" cy="70" r="50" fill="#172E20" stroke="#2A5238" stroke-width="1"/>
+        <circle cx="70" cy="70" r="30" fill="#1A3326" stroke="#2A5238" stroke-width="1"/>
+        <circle cx="70" cy="70" r="14" fill="#1E3D2A" stroke="#2A5238" stroke-width="1"/>
+        <circle cx="70" cy="70" r="5" fill="#2A5238"/>
+        <line x1="70" y1="56" x2="70" y2="84" stroke="#2A5238" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="56" y1="70" x2="84" y2="70" stroke="#2A5238" stroke-width="1" stroke-dasharray="2 3"/>
+        <path d="M 30 58 A 44 44 0 0 1 110 58" stroke="#E8621A" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.35"/>
+      </svg>
+    </div>
+
+    <!-- Context -->
+    <div class="context-card">
+      <div class="ctx-item">
+        <div class="ctx-label">Year Released</div>
+        <div class="ctx-value" id="ctxYear">—</div>
+      </div>
+      <div class="ctx-divider"></div>
+      <div class="ctx-item">
+        <div class="ctx-label">Manufacturer</div>
+        <div class="ctx-value" id="ctxMfr">—</div>
+      </div>
+      <div class="ctx-divider"></div>
+      <div class="ctx-item">
+        <div class="ctx-label">Production</div>
+        <div id="ctxProd">—</div>
+      </div>
+      <div class="ctx-divider"></div>
+      <div class="ctx-item">
+        <div class="ctx-label">Type</div>
+        <div class="ctx-value" id="ctxType">—</div>
+      </div>
+    </div>
+
+    <!-- Clues -->
+    <div class="clues-area" id="cluesArea"></div>
+
+    <!-- Guesses -->
+    <div class="guess-area">
+      <div class="guess-label">Your Guesses</div>
+      <div class="guess-slots" id="guessSlots"></div>
+      <div class="input-wrap" id="inputWrap">
+        <div class="autocomplete-list" id="acList"></div>
+        <input type="text" class="disc-input" id="discInput"
+          placeholder="Type a disc name…"
+          autocomplete="off"
+          oninput="handleInput()"
+          onkeydown="handleKeydown(event)"
+        />
+        <button class="guess-btn" id="guessBtn" onclick="submitGuess()">THROW</button>
+      </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div class="result-screen" id="resultScreen">
+      <div class="result-hero" id="resultHero">
+        <div class="result-headline" id="resultHeadline"></div>
+        <div class="result-subline" id="resultSubline"></div>
+        <div class="disc-reveal-card" id="discRevealCard"></div>
+        <div class="guess-trail" id="guesTrail"></div>
+      </div>
+
+      <!-- I Throw This -->
+      <div class="action-card">
+        <div class="action-title">Do you throw this disc?</div>
+        <div class="throw-buttons">
+          <button class="throw-btn" id="throwYes" onclick="rateThrow(true)">🥏 Yes, it's in my bag</button>
+          <button class="throw-btn" id="throwNo" onclick="rateThrow(false)">✕ Not my disc</button>
+        </div>
+        <div class="throw-stat" id="throwStat"></div>
+      </div>
+
+      <!-- Difficulty -->
+      <div class="action-card">
+        <div class="action-title">How hard was today?</div>
+        <div class="diff-buttons">
+          <button class="diff-btn" id="diffEasy" onclick="rateDiff('easy')">
+            <span class="diff-emoji">😤</span>
+            <span class="diff-label">Easy</span>
+          </button>
+          <button class="diff-btn" id="diffMedium" onclick="rateDiff('medium')">
+            <span class="diff-emoji">😐</span>
+            <span class="diff-label">Medium</span>
+          </button>
+          <button class="diff-btn" id="diffHard" onclick="rateDiff('hard')">
+            <span class="diff-emoji">😅</span>
+            <span class="diff-label">Hard</span>
+          </button>
+        </div>
+        <div class="diff-result" id="diffResult"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="bottom-actions">
+        <button class="action-btn primary" onclick="shareResult()">📋 Share Result</button>
+        <button class="action-btn secondary" onclick="openModal('archive')">📅 Play Missed Days</button>
+      </div>
+
+      <!-- Countdown -->
+      <div class="countdown-wrap">
+        <div class="countdown-label">Next disc in</div>
+        <div class="countdown-time" id="countdownTime">--:--:--</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>A new disc every day · Not affiliated with PDGA or any manufacturer</footer>
+
+<!-- STATS MODAL -->
+<div class="modal-overlay" id="modalStats">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('stats')">✕</button>
+    <h2>Your Stats</h2>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="guess-dist" id="guessDist"></div>
+  </div>
+</div>
+
+<!-- ARCHIVE MODAL -->
+<div class="modal-overlay" id="modalArchive">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('archive')">✕</button>
+    <div id="archiveContent"></div>
+  </div>
+</div>
+
+<!-- HOW TO PLAY MODAL -->
+<div class="modal-overlay" id="modalHow">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('how')">✕</button>
+    <h2>How to Play</h2>
+    <p>A mystery disc is revealed each day. You know the <strong>year released</strong>, <strong>manufacturer</strong>, <strong>disc type</strong>, and <strong>production status</strong> from the start.</p>
+    <p>Make up to <strong>5 guesses</strong>. Each wrong guess reveals a new clue:</p>
+    <div class="how-step"><span>After guess 1</span>Speed rating revealed</div>
+    <div class="how-step"><span>After guess 2</span>Glide rating revealed</div>
+    <div class="how-step"><span>After guess 3</span>Turn rating revealed</div>
+    <div class="how-step"><span>After guess 4</span>Fade rating revealed</div>
+    <p style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">Guesses are filtered to discs from today's manufacturer only. Type to search.</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRemO01NETLRg38BMSFYBSbWYweVqJ7W33_JDrU7szPV1DF8T6UVoh4nELteKTXpm3UQxrLFoh78CCA/pub?gid=0&single=true&output=csv";
+
+// Change this to your actual launch date when ready
+const LAUNCH_DATE = "2025-01-01";
+
+// ============================================================
+//  CLUE DEFINITIONS
+// ============================================================
+const CLUE_DEFS = [
+  { key: "speed",     label: "Speed",  icon: "⚡", format: d => String(d.speed) },
+  { key: "glide",     label: "Glide",  icon: "🌬️", format: d => String(d.glide) },
+  { key: "turn",      label: "Turn",   icon: "↪️",  format: d => String(d.turn)  },
+  { key: "fade",      label: "Fade",   icon: "↩️",  format: d => String(d.fade)  },
+];
+
+// ============================================================
+//  STATE
+// ============================================================
+let DISCS = [];
+let todayDisc = null;
+let archiveDisc = null;
+let isArchiveMode = false;
+let archiveDayIndex = null;
+let acSelectedIndex = -1;
+
+function getDayIndex(dateStr) {
+  const launch = new Date(LAUNCH_DATE);
+  const target = new Date(dateStr);
+  launch.setHours(0,0,0,0);
+  target.setHours(0,0,0,0);
+  return Math.floor((target - launch) / 86400000);
+}
+
+function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getStateKey(dayIndex) { return `discle_day_${dayIndex}`; }
+
+function loadDayState(dayIndex) {
+  const s = localStorage.getItem(getStateKey(dayIndex));
+  return s ? JSON.parse(s) : { guesses: [], cluesRevealed: 0, finished: false, won: false, threwThis: null, difficulty: null };
+}
+
+function saveDayState(dayIndex, state) {
+  localStorage.setItem(getStateKey(dayIndex), JSON.stringify(state));
+}
+
+function loadStats() {
+  const s = localStorage.getItem("discle_stats_v2");
+  return s ? JSON.parse(s) : { played: 0, won: 0, streak: 0, maxStreak: 0, lastWinDay: null, dist: [0,0,0,0,0,0] };
+}
+
+function saveStats(dayIndex, won, guessCount) {
+  const stats = loadStats();
+  const todayIdx = getDayIndex(getTodayStr());
+  if (dayIndex !== todayIdx) return; // don't count archive in stats
+  stats.played++;
+  if (won) {
+    stats.won++;
+    stats.dist[guessCount - 1]++;
+    if (stats.lastWinDay === dayIndex - 1) {
+      stats.streak++;
+    } else {
+      stats.streak = 1;
+    }
+    if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
+    stats.lastWinDay = dayIndex;
+  } else {
+    stats.dist[5]++;
+    stats.streak = 0;
+  }
+  localStorage.setItem("discle_stats_v2", JSON.stringify(stats));
+}
+
+// ============================================================
+//  CSV PARSE
+// ============================================================
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQ = !inQ; }
+      else if (line[i] === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else { cur += line[i]; }
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').replace(/^"|"$/g, '').trim(); });
+    return obj;
+  }).filter(r => r['Disc Name']);
+}
+
+function normalizeDisc(row) {
+  return {
+    id: parseInt(row['ID']) || 0,
+    month: row['Month'] || '',
+    day: parseInt(row['Day']) || 0,
+    name: row['Disc Name'] || '',
+    manufacturer: row['Manufacturer'] || '',
+    year: row['Year Released'] || '',
+    inProduction: row['In Production'] || 'Yes',
+    type: row['Disc Type'] || '',
+    speed: row['Speed'] || '',
+    glide: row['Glide'] || '',
+    turn: row['Turn'] || '',
+    fade: row['Fade'] || '',
+    signature: row['Signature Pro'] || '',
+    plastics: row['Plastics'] || '',
+  };
+}
+
+// ============================================================
+//  DISC SELECTION
+// ============================================================
+function getDiscForDay(dayIndex) {
+  if (DISCS.length === 0) return null;
+  // If disc has Month+Day scheduling, use that
+  // Otherwise fall back to ID-based cycling
+  const idx = dayIndex % DISCS.length;
+  return DISCS[idx];
+}
+
+// ============================================================
+//  RENDER
+// ============================================================
+function renderGame(disc, state, dayIndex) {
+  const isTodayMode = dayIndex === getDayIndex(getTodayStr());
+
+  // Context
+  document.getElementById('ctxYear').textContent = disc.year || '—';
+  document.getElementById('ctxMfr').textContent = disc.manufacturer || '—';
+  document.getElementById('ctxType').textContent = shortType(disc.type);
+  const prodEl = document.getElementById('ctxProd');
+  const isYes = disc.inProduction.toLowerCase() === 'yes';
+  prodEl.innerHTML = `<span class="ctx-badge ${isYes ? 'yes' : 'no'}">${isYes ? '✓ In Production' : '✕ Discontinued'}</span>`;
+
+  // Clues
+  renderClues(disc, state);
+  // Guess slots
+  renderGuessSlots(disc, state);
+  // Input
+  const input = document.getElementById('discInput');
+  const btn = document.getElementById('guessBtn');
+  if (state.finished) {
+    input.disabled = true;
+    btn.disabled = true;
+    document.getElementById('inputWrap').style.display = 'none';
+    renderResultScreen(disc, state, isTodayMode);
+  } else {
+    input.disabled = false;
+    btn.disabled = false;
+    document.getElementById('inputWrap').style.display = 'flex';
+    document.getElementById('resultScreen').classList.remove('show');
+  }
+}
+
+function shortType(type) {
+  const map = { 'Distance Driver': 'Dist Driver', 'Fairway Driver': 'Fairway', 'Midrange': 'Midrange', 'Putter': 'Putter' };
+  return map[type] || type;
+}
+
+function renderClues(disc, state) {
+  const area = document.getElementById('cluesArea');
+  area.innerHTML = '';
+  CLUE_DEFS.forEach((clue, i) => {
+    const revealed = i < state.cluesRevealed || state.finished;
+    const justRevealed = i === state.cluesRevealed - 1 && !state.finished;
+    const card = document.createElement('div');
+    card.className = 'clue-card' + (revealed ? (justRevealed ? ' revealed' : ' revealed-old') : ' locked');
+    card.innerHTML = `
+      <div class="clue-number">${i+1}</div>
+      <div class="clue-type">${clue.icon} ${clue.label}</div>
+      <div class="clue-value">${revealed ? clue.format(disc) : 'Locked'}</div>
+    `;
+    area.appendChild(card);
+  });
+}
+
+function renderGuessSlots(disc, state) {
+  const slots = document.getElementById('guessSlots');
+  slots.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const slot = document.createElement('div');
+    if (i < state.guesses.length) {
+      const g = state.guesses[i];
+      slot.className = 'guess-slot ' + (g.correct ? 'correct' : 'wrong');
+      slot.innerHTML = `${g.name} <span class="slot-icon">${g.correct ? '🎯' : '✗'}</span>`;
+    } else if (i === state.guesses.length && !state.finished) {
+      slot.className = 'guess-slot active';
+      slot.textContent = '← Enter your guess';
+    } else {
+      slot.className = 'guess-slot';
+      slot.textContent = '—';
+    }
+    slots.appendChild(slot);
+  }
+}
+
+function renderResultScreen(disc, state, isTodayMode) {
+  const screen = document.getElementById('resultScreen');
+  screen.classList.add('show');
+
+  const hero = document.getElementById('resultHero');
+  hero.className = 'result-hero ' + (state.won ? 'win' : 'lose');
+
+  document.getElementById('resultHeadline').textContent = state.won ? '🎯 Nice Throw!' : 'Out of Bounds';
+  document.getElementById('resultSubline').textContent = state.won
+    ? `You got it in ${state.guesses.length} guess${state.guesses.length !== 1 ? 'es' : ''}!`
+    : 'Better luck tomorrow';
+
+  document.getElementById('discRevealCard').innerHTML = `
+    <div class="disc-reveal-name">${disc.name}</div>
+    <div class="disc-reveal-mfr">${disc.manufacturer} · ${disc.year}</div>
+    <div class="disc-reveal-flights">
+      <div class="flight-pill"><div class="flight-pill-num">${disc.speed}</div><div class="flight-pill-label">Speed</div></div>
+      <div class="flight-pill"><div class="flight-pill-num">${disc.glide}</div><div class="flight-pill-label">Glide</div></div>
+      <div class="flight-pill"><div class="flight-pill-num">${disc.turn}</div><div class="flight-pill-label">Turn</div></div>
+      <div class="flight-pill"><div class="flight-pill-num">${disc.fade}</div><div class="flight-pill-label">Fade</div></div>
+    </div>
+  `;
+
+  const trail = state.guesses.map(g => g.correct ? '🎯' : '❌').join('');
+  const empties = state.won ? '⬜'.repeat(5 - state.guesses.length) : '';
+  document.getElementById('guesTrail').textContent = trail + empties;
+
+  // Restore throw/diff state
+  restoreThrowUI(state);
+  restoreDiffUI(state);
+
+  // Countdown (today only)
+  if (isTodayMode) {
+    document.querySelector('.countdown-wrap').style.display = 'block';
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  } else {
+    document.querySelector('.countdown-wrap').style.display = 'none';
+  }
+}
+
+function restoreThrowUI(state) {
+  const yesBtn = document.getElementById('throwYes');
+  const noBtn = document.getElementById('throwNo');
+  const stat = document.getElementById('throwStat');
+  yesBtn.className = 'throw-btn' + (state.threwThis === true ? ' selected-yes' : '');
+  noBtn.className = 'throw-btn' + (state.threwThis === false ? ' selected-no' : '');
+  if (state.threwThis !== null) {
+    showThrowStat(stat);
+  }
+}
+
+function restoreDiffUI(state) {
+  ['Easy','Medium','Hard'].forEach(d => {
+    document.getElementById('diff'+d).className = 'diff-btn' + (state.difficulty === d.toLowerCase() ? ' selected' : '');
+  });
+  if (state.difficulty) showDiffResult();
+}
+
+// ============================================================
+//  THROW THIS / DIFFICULTY
+// ============================================================
+function getCurrentState() {
+  const dayIndex = isArchiveMode ? archiveDayIndex : getDayIndex(getTodayStr());
+  return loadDayState(dayIndex);
+}
+
+function setCurrentState(state) {
+  const dayIndex = isArchiveMode ? archiveDayIndex : getDayIndex(getTodayStr());
+  saveDayState(dayIndex, state);
+}
+
+function rateThrow(yes) {
+  const state = getCurrentState();
+  if (state.threwThis !== null) return;
+  state.threwThis = yes;
+  setCurrentState(state);
+  const yesBtn = document.getElementById('throwYes');
+  const noBtn = document.getElementById('throwNo');
+  yesBtn.className = 'throw-btn' + (yes ? ' selected-yes' : '');
+  noBtn.className = 'throw-btn' + (!yes ? ' selected-no' : '');
+  showThrowStat(document.getElementById('throwStat'));
+}
+
+function showThrowStat(el) {
+  // Simulate community stat (in real version this would come from backend)
+  el.innerHTML = `<strong>You're not alone</strong> — lots of players throw this disc too.`;
+  el.classList.add('show');
+}
+
+function rateDiff(level) {
+  const state = getCurrentState();
+  if (state.difficulty) return;
+  state.difficulty = level;
+  setCurrentState(state);
+  ['Easy','Medium','Hard'].forEach(d => {
+    document.getElementById('diff'+d).className = 'diff-btn' + (d.toLowerCase() === level ? ' selected' : '');
+  });
+  showDiffResult();
+}
+
+function showDiffResult() {
+  // Simulated community results — replace with real backend data later
+  const results = { easy: 30, medium: 45, hard: 25 };
+  const total = results.easy + results.medium + results.hard;
+  const el = document.getElementById('diffResult');
+  el.innerHTML = `
+    <div>Community rating</div>
+    <div class="diff-bar">
+      <div class="diff-bar-seg easy" style="width:${results.easy}%"></div>
+      <div class="diff-bar-seg medium" style="width:${results.medium}%"></div>
+      <div class="diff-bar-seg hard" style="width:${results.hard}%"></div>
+    </div>
+    <div class="diff-bar-labels">
+      <span>😤 ${results.easy}%</span>
+      <span>😐 ${results.medium}%</span>
+      <span>😅 ${results.hard}%</span>
+    </div>
+  `;
+  el.classList.add('show');
+}
+
+// ============================================================
+//  COUNTDOWN
+// ============================================================
+function updateCountdown() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const diff = tomorrow - now;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('countdownTime').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ============================================================
+//  GUESS LOGIC
+// ============================================================
+function getActiveDisc() { return isArchiveMode ? archiveDisc : todayDisc; }
+
+function getFilteredDiscs(query) {
+  const disc = getActiveDisc();
+  if (!disc || !query) return [];
+  const q = query.toLowerCase();
+  return DISCS.filter(d =>
+    d.manufacturer === disc.manufacturer &&
+    d.name.toLowerCase().includes(q)
+  ).slice(0, 7);
+}
+
+function handleInput() {
+  acSelectedIndex = -1;
+  renderAutocomplete(document.getElementById('discInput').value);
+}
+
+function renderAutocomplete(val) {
+  const list = document.getElementById('acList');
+  list.innerHTML = '';
+  if (!val) return;
+  getFilteredDiscs(val).forEach(disc => {
+    const item = document.createElement('div');
+    item.className = 'ac-item';
+    item.innerHTML = `<span class="ac-item-name">${disc.name}</span><span class="ac-item-sub">${disc.type} · ${disc.speed}/${disc.glide}/${disc.turn}/${disc.fade}</span>`;
+    item.onclick = () => selectAC(disc.name);
+    list.appendChild(item);
+  });
+}
+
+function selectAC(name) {
+  document.getElementById('discInput').value = name;
+  document.getElementById('acList').innerHTML = '';
+  acSelectedIndex = -1;
+}
+
+function handleKeydown(e) {
+  const items = document.getElementById('acList').querySelectorAll('.ac-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acSelectedIndex = Math.min(acSelectedIndex + 1, items.length - 1);
+    items.forEach((el,i) => el.classList.toggle('ac-selected', i === acSelectedIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acSelectedIndex = Math.max(acSelectedIndex - 1, 0);
+    items.forEach((el,i) => el.classList.toggle('ac-selected', i === acSelectedIndex));
+  } else if (e.key === 'Enter') {
+    if (acSelectedIndex >= 0 && items[acSelectedIndex]) {
+      selectAC(items[acSelectedIndex].querySelector('.ac-item-name').textContent);
+    } else {
+      submitGuess();
+    }
+  } else if (e.key === 'Escape') {
+    document.getElementById('acList').innerHTML = '';
+  }
+}
+
+function submitGuess() {
+  const disc = getActiveDisc();
+  if (!disc) return;
+  const dayIndex = isArchiveMode ? archiveDayIndex : getDayIndex(getTodayStr());
+  const state = loadDayState(dayIndex);
+  if (state.finished) return;
+
+  const input = document.getElementById('discInput');
+  const raw = input.value.trim();
+  if (!raw) return;
+
+  const match = DISCS.find(d =>
+    d.manufacturer === disc.manufacturer &&
+    d.name.toLowerCase() === raw.toLowerCase()
+  );
+
+  if (!match) {
+    input.style.borderColor = '#8B5A5A';
+    input.placeholder = 'Not a recognized disc for this manufacturer';
+    setTimeout(() => { input.style.borderColor = ''; input.placeholder = 'Type a disc name…'; }, 1200);
+    return;
+  }
+
+  const correct = match.name === disc.name;
+  state.guesses.push({ name: match.name, correct });
+
+  if (correct) {
+    state.finished = true;
+    state.won = true;
+    saveStats(dayIndex, true, state.guesses.length);
+  } else if (state.guesses.length >= 5) {
+    state.finished = true;
+    state.won = false;
+    saveStats(dayIndex, false, state.guesses.length);
+  } else {
+    state.cluesRevealed = state.guesses.length;
+  }
+
+  saveDayState(dayIndex, state);
+  input.value = '';
+  document.getElementById('acList').innerHTML = '';
+  renderGame(disc, state, dayIndex);
+}
+
+// ============================================================
+//  SHARE
+// ============================================================
+function shareResult() {
+  const disc = getActiveDisc();
+  const dayIndex = isArchiveMode ? archiveDayIndex : getDayIndex(getTodayStr());
+  const state = loadDayState(dayIndex);
+  const trail = state.guesses.map(g => g.correct ? '🎯' : '❌').join('');
+  const empties = state.won ? '⬜'.repeat(5 - state.guesses.length) : '';
+  const text = `DISCLE ${getTodayStr()}\n${disc.manufacturer} · ${disc.year}\n${trail}${empties}\n\ndiscle.app`;
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.action-btn.primary');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+// ============================================================
+//  MODALS
+// ============================================================
+function openModal(id) {
+  if (id === 'stats') renderStatsModal();
+  if (id === 'archive') renderArchiveModal();
+  document.getElementById('modal' + id.charAt(0).toUpperCase() + id.slice(1)).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById('modal' + id.charAt(0).toUpperCase() + id.slice(1)).classList.remove('open');
+  if (id === 'archive' && isArchiveMode) exitArchiveMode();
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target === el) {
+      el.classList.remove('open');
+      if (isArchiveMode) exitArchiveMode();
+    }
+  });
+});
+
+function renderStatsModal() {
+  const stats = loadStats();
+  const pct = stats.played ? Math.round(stats.won / stats.played * 100) : 0;
+  const avg = stats.played ? (stats.dist.reduce((a,v,i) => a + v*(i+1), 0) / Math.max(stats.won,1)).toFixed(1) : '—';
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${stats.played}</div><div class="stat-label">Played</div></div>
+    <div class="stat-box"><div class="stat-num">${pct}%</div><div class="stat-label">Win %</div></div>
+    <div class="stat-box"><div class="stat-num">${stats.streak}</div><div class="stat-label">Streak</div></div>
+    <div class="stat-box"><div class="stat-num">${stats.maxStreak}</div><div class="stat-label">Best</div></div>
+  `;
+  const maxDist = Math.max(...stats.dist, 1);
+  const labels = ['1','2','3','4','5','X'];
+  const todayGuesses = (() => {
+    const s = loadDayState(getDayIndex(getTodayStr()));
+    return (s.finished && s.won) ? s.guesses.length : null;
+  })();
+  document.getElementById('guessDist').innerHTML = `
+    <div class="dist-label">Guess Distribution</div>
+    ${stats.dist.map((v,i) => `
+      <div class="dist-row">
+        <div class="dist-num">${labels[i]}</div>
+        <div class="dist-bar-wrap">
+          <div class="dist-bar-fill ${todayGuesses === i+1 ? 'highlight' : ''}" style="width:${Math.round(v/maxDist*100)}%">
+            <span>${v}</span>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderArchiveModal() {
+  const content = document.getElementById('archiveContent');
+  const todayIdx = getDayIndex(getTodayStr());
+  const totalDays = Math.min(todayIdx + 1, DISCS.length);
+
+  let html = '<h2>Archive</h2><p style="margin-bottom:12px;">Play any previous day\'s disc.</p>';
+  html += '<div class="archive-grid">';
+
+  for (let i = 0; i < totalDays; i++) {
+    const state = loadDayState(i);
+    let cls = '';
+    if (i === todayIdx) cls = 'today';
+    else if (state.finished && state.won) cls = 'played-win';
+    else if (state.finished && !state.won) cls = 'played-lose';
+    const disc = DISCS[i % DISCS.length];
+    const label = i + 1;
+    html += `<div class="archive-day ${cls}" onclick="playArchiveDay(${i})" title="Day ${label}${disc ? ' · ' + disc.name : ''}">${label}</div>`;
+  }
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+function playArchiveDay(dayIndex) {
+  const todayIdx = getDayIndex(getTodayStr());
+  if (dayIndex === todayIdx) {
+    closeModal('archive');
+    return;
+  }
+  isArchiveMode = true;
+  archiveDayIndex = dayIndex;
+  archiveDisc = DISCS[dayIndex % DISCS.length];
+  const state = loadDayState(dayIndex);
+  closeModal('archive');
+  renderArchiveGame(archiveDisc, state, dayIndex);
+}
+
+function renderArchiveGame(disc, state, dayIndex) {
+  // Show archive header above game
+  let header = document.getElementById('archiveGameHeader');
+  if (!header) {
+    header = document.createElement('div');
+    header.id = 'archiveGameHeader';
+    header.className = 'archive-game-header';
+    header.style.cssText = 'max-width:640px;width:calc(100% - 32px);margin:14px auto 0;';
+    document.getElementById('mainGame').insertBefore(header, document.getElementById('gameContent'));
+  }
+  header.innerHTML = `
+    <div>
+      <div class="archive-game-label">Archive — Day ${dayIndex + 1}</div>
+      <div class="archive-game-date">Disc #${dayIndex + 1}</div>
+    </div>
+    <button class="back-btn" onclick="exitArchiveMode()">← Back to Today</button>
+  `;
+  renderGame(disc, state, dayIndex);
+}
+
+function exitArchiveMode() {
+  isArchiveMode = false;
+  archiveDayIndex = null;
+  archiveDisc = null;
+  const header = document.getElementById('archiveGameHeader');
+  if (header) header.remove();
+  const todayIdx = getDayIndex(getTodayStr());
+  const state = loadDayState(todayIdx);
+  renderGame(todayDisc, state, todayIdx);
+}
+
+// ============================================================
+//  INIT — FETCH SHEET DATA
+// ============================================================
+async function init() {
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error('Sheet fetch failed');
+    const text = await res.text();
+    const rows = parseCSV(text);
+    DISCS = rows.map(normalizeDisc).filter(d => d.name);
+
+    if (DISCS.length === 0) throw new Error('No discs found');
+
+    const todayIdx = getDayIndex(getTodayStr());
+    todayDisc = DISCS[todayIdx % DISCS.length];
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('gameContent').style.display = 'block';
+
+    const state = loadDayState(todayIdx);
+    renderGame(todayDisc, state, todayIdx);
+
+  } catch (err) {
+    document.getElementById('loadingScreen').innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--orange);margin-bottom:8px;">Couldn't load discs</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);">Check that your Google Sheet is published to the web and try refreshing.</div>
+        <button onclick="init()" style="margin-top:16px;padding:10px 20px;background:var(--orange);color:white;border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer;">Retry</button>
+      </div>
+    `;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
