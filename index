@@ -1097,59 +1097,138 @@ function exitArchiveMode() {
 }
 
 // ============================================================
-//  INIT — FETCH SHEET DATA (with multiple proxy fallbacks)
+//  DISC DATA — paste updated export from Google Sheets here
+//  To update: File → Download → CSV, then replace the array below
 // ============================================================
-const RAW_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRemO01NETLRg38BMSFYBSbWYweVqJ7W33_JDrU7szPV1DF8T6UVoh4nELteKTXpm3UQxrLFoh78CCA/pub?gid=0&single=true&output=csv";
-
-const PROXY_URLS = [
-  RAW_SHEET_URL,
-  `https://corsproxy.io/?url=${encodeURIComponent(RAW_SHEET_URL)}`,
-  `https://api.allorigins.win/raw?url=${encodeURIComponent(RAW_SHEET_URL)}`,
-  `https://thingproxy.freeboard.io/fetch/${RAW_SHEET_URL}`,
+const DISC_DATA = [
+  {id:1,name:"Destroyer",manufacturer:"Innova",year:"2007",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"5",turn:"-1",fade:"3"},
+  {id:2,name:"Wraith",manufacturer:"Innova",year:"2005",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"5",turn:"-1",fade:"3"},
+  {id:3,name:"Boss",manufacturer:"Innova",year:"2008",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-1",fade:"3"},
+  {id:4,name:"Firebird",manufacturer:"Innova",year:"2000",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"3",turn:"0",fade:"4"},
+  {id:5,name:"Thunderbird",manufacturer:"Innova",year:"2014",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"0",fade:"2"},
+  {id:6,name:"Leopard",manufacturer:"Innova",year:"2014",inProduction:"Yes",type:"Fairway Driver",speed:"6",glide:"5",turn:"-2",fade:"1"},
+  {id:7,name:"TeeBird",manufacturer:"Innova",year:"1999",inProduction:"Yes",type:"Fairway Driver",speed:"7",glide:"5",turn:"0",fade:"2"},
+  {id:8,name:"Roc",manufacturer:"Innova",year:"1987",inProduction:"Yes",type:"Midrange",speed:"5",glide:"4",turn:"0",fade:"3"},
+  {id:9,name:"Mako3",manufacturer:"Innova",year:"2013",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"0",fade:"0"},
+  {id:10,name:"Aviar",manufacturer:"Innova",year:"1984",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"1"},
+  {id:11,name:"Mamba",manufacturer:"Innova",year:"2012",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"6",turn:"-5",fade:"1"},
+  {id:12,name:"Valkyrie",manufacturer:"Innova",year:"2000",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"4",turn:"-2",fade:"2"},
+  {id:13,name:"Beast",manufacturer:"Innova",year:"2002",inProduction:"Yes",type:"Distance Driver",speed:"10",glide:"5",turn:"-2",fade:"2"},
+  {id:14,name:"Roadrunner",manufacturer:"Innova",year:"2005",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"-4",fade:"1"},
+  {id:15,name:"Shark",manufacturer:"Innova",year:"1989",inProduction:"Yes",type:"Midrange",speed:"4",glide:"4",turn:"0",fade:"2"},
+  {id:16,name:"Buzzz",manufacturer:"Discraft",year:"2003",inProduction:"Yes",type:"Midrange",speed:"5",glide:"4",turn:"-1",fade:"1"},
+  {id:17,name:"Nuke",manufacturer:"Discraft",year:"2008",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-1",fade:"3"},
+  {id:18,name:"Force",manufacturer:"Discraft",year:"2008",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"5",turn:"0",fade:"3"},
+  {id:19,name:"Undertaker",manufacturer:"Discraft",year:"2018",inProduction:"Yes",type:"Distance Driver",speed:"9",glide:"5",turn:"-2",fade:"2"},
+  {id:20,name:"Zone",manufacturer:"Discraft",year:"2000",inProduction:"Yes",type:"Putter",speed:"4",glide:"3",turn:"0",fade:"3"},
+  {id:21,name:"Meteor",manufacturer:"Discraft",year:"1997",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"-3",fade:"1"},
+  {id:22,name:"Luna",manufacturer:"Discraft",year:"2019",inProduction:"Yes",type:"Putter",speed:"3",glide:"3",turn:"0",fade:"2"},
+  {id:23,name:"Buzzz OS",manufacturer:"Discraft",year:"2010",inProduction:"Yes",type:"Midrange",speed:"5",glide:"4",turn:"0",fade:"3"},
+  {id:24,name:"Challenger",manufacturer:"Discraft",year:"1997",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"1"},
+  {id:25,name:"Nuke OS",manufacturer:"Discraft",year:"2012",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"0",fade:"4"},
+  {id:26,name:"Anax",manufacturer:"Discraft",year:"2019",inProduction:"Yes",type:"Distance Driver",speed:"10",glide:"6",turn:"-2",fade:"2"},
+  {id:27,name:"Raptor",manufacturer:"Discraft",year:"2020",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"-1",fade:"2"},
+  {id:28,name:"Scorch",manufacturer:"Discraft",year:"2021",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"6",turn:"-2",fade:"2"},
+  {id:29,name:"Vulture",manufacturer:"Discraft",year:"2021",inProduction:"Yes",type:"Distance Driver",speed:"10",glide:"5",turn:"-2",fade:"2"},
+  {id:30,name:"Judge",manufacturer:"Dynamic Discs",year:"2012",inProduction:"Yes",type:"Putter",speed:"2",glide:"4",turn:"0",fade:"1"},
+  {id:31,name:"Trespass",manufacturer:"Dynamic Discs",year:"2014",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"5",turn:"-1",fade:"3"},
+  {id:32,name:"Escape",manufacturer:"Dynamic Discs",year:"2011",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"-1",fade:"2"},
+  {id:33,name:"Verdict",manufacturer:"Dynamic Discs",year:"2016",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"-1",fade:"1"},
+  {id:34,name:"Truth",manufacturer:"Dynamic Discs",year:"2012",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"0",fade:"2"},
+  {id:35,name:"Raider",manufacturer:"Dynamic Discs",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-1",fade:"3"},
+  {id:36,name:"Sheriff",manufacturer:"Dynamic Discs",year:"2016",inProduction:"Yes",type:"Distance Driver",speed:"14",glide:"5",turn:"-1",fade:"3"},
+  {id:37,name:"Maverick",manufacturer:"Dynamic Discs",year:"2017",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"-2",fade:"1"},
+  {id:38,name:"Bounty",manufacturer:"Dynamic Discs",year:"2018",inProduction:"Yes",type:"Putter",speed:"3",glide:"4",turn:"-1",fade:"1"},
+  {id:39,name:"Glitch",manufacturer:"MVP Disc Sports",year:"2022",inProduction:"Yes",type:"Putter",speed:"1",glide:"7",turn:"0",fade:"0"},
+  {id:40,name:"Octane",manufacturer:"MVP Disc Sports",year:"2016",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-1",fade:"3"},
+  {id:41,name:"Envy",manufacturer:"Axiom Discs",year:"2014",inProduction:"Yes",type:"Putter",speed:"3",glide:"3",turn:"0",fade:"2"},
+  {id:42,name:"Panic",manufacturer:"Axiom Discs",year:"2020",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"4",turn:"-0.5",fade:"3"},
+  {id:43,name:"Tesla",manufacturer:"MVP Disc Sports",year:"2014",inProduction:"Yes",type:"Distance Driver",speed:"9",glide:"5",turn:"-1",fade:"2"},
+  {id:44,name:"Volt",manufacturer:"MVP Disc Sports",year:"2012",inProduction:"Yes",type:"Fairway Driver",speed:"8",glide:"5",turn:"-0.5",fade:"2"},
+  {id:45,name:"Photon",manufacturer:"MVP Disc Sports",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"5",turn:"-1",fade:"2"},
+  {id:46,name:"Relay",manufacturer:"MVP Disc Sports",year:"2015",inProduction:"Yes",type:"Fairway Driver",speed:"6",glide:"5",turn:"-2",fade:"1"},
+  {id:47,name:"Ion",manufacturer:"MVP Disc Sports",year:"2009",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"1"},
+  {id:48,name:"Hex",manufacturer:"MVP Disc Sports",year:"2021",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"-1",fade:"1"},
+  {id:49,name:"River",manufacturer:"Latitude 64",year:"2013",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"6",turn:"-2",fade:"2"},
+  {id:50,name:"Claymore",manufacturer:"Latitude 64",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"5",turn:"0",fade:"4"},
+  {id:51,name:"Mercy",manufacturer:"Latitude 64",year:"2014",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"1"},
+  {id:52,name:"Saint",manufacturer:"Latitude 64",year:"2009",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"7",turn:"-2",fade:"1"},
+  {id:53,name:"Halo",manufacturer:"Latitude 64",year:"2013",inProduction:"Yes",type:"Midrange",speed:"4",glide:"6",turn:"-3",fade:"0"},
+  {id:54,name:"Jade",manufacturer:"Latitude 64",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"6",turn:"-2",fade:"2"},
+  {id:55,name:"Striker",manufacturer:"Latitude 64",year:"2018",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"5",turn:"-1",fade:"3"},
+  {id:56,name:"Pure",manufacturer:"Latitude 64",year:"2012",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"1"},
+  {id:57,name:"Explorer",manufacturer:"Latitude 64",year:"2013",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"6",turn:"-2",fade:"2"},
+  {id:58,name:"Ballista Pro",manufacturer:"Latitude 64",year:"2016",inProduction:"Yes",type:"Distance Driver",speed:"14",glide:"6",turn:"-1",fade:"3"},
+  {id:59,name:"Photons",manufacturer:"Westside Discs",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"14",glide:"6",turn:"-1",fade:"3"},
+  {id:60,name:"Hatchet",manufacturer:"Westside Discs",year:"2011",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"6",turn:"-2",fade:"2"},
+  {id:61,name:"Chameleon",manufacturer:"Westside Discs",year:"2012",inProduction:"Yes",type:"Midrange",speed:"5",glide:"6",turn:"-3",fade:"0"},
+  {id:62,name:"Swan",manufacturer:"Westside Discs",year:"2011",inProduction:"Yes",type:"Putter",speed:"2",glide:"4",turn:"-1",fade:"1"},
+  {id:63,name:"Marker",manufacturer:"Westside Discs",year:"2014",inProduction:"Yes",type:"Putter",speed:"2",glide:"4",turn:"0",fade:"2"},
+  {id:64,name:"Sword",manufacturer:"Westside Discs",year:"2013",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"0",fade:"3"},
+  {id:65,name:"Warship",manufacturer:"Westside Discs",year:"2016",inProduction:"Yes",type:"Midrange",speed:"6",glide:"5",turn:"-1",fade:"3"},
+  {id:66,name:"Rask",manufacturer:"Kastaplast",year:"2016",inProduction:"Yes",type:"Putter",speed:"2",glide:"4",turn:"0",fade:"2"},
+  {id:67,name:"Berg",manufacturer:"Kastaplast",year:"2015",inProduction:"Yes",type:"Putter",speed:"1",glide:"1",turn:"0",fade:"2"},
+  {id:68,name:"Falk",manufacturer:"Kastaplast",year:"2017",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"0",fade:"3"},
+  {id:69,name:"Gote",manufacturer:"Kastaplast",year:"2018",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-1",fade:"3"},
+  {id:70,name:"Grym",manufacturer:"Kastaplast",year:"2016",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-1",fade:"2"},
+  {id:71,name:"Grym X",manufacturer:"Kastaplast",year:"2018",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"0",fade:"3"},
+  {id:72,name:"Lots",manufacturer:"Kastaplast",year:"2018",inProduction:"Yes",type:"Fairway Driver",speed:"8",glide:"5",turn:"-3",fade:"1"},
+  {id:73,name:"Stal",manufacturer:"Kastaplast",year:"2019",inProduction:"Yes",type:"Midrange",speed:"7",glide:"4",turn:"0",fade:"3"},
+  {id:74,name:"Tern",manufacturer:"Innova",year:"2012",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"6",turn:"-3",fade:"2"},
+  {id:75,name:"Shryke",manufacturer:"Innova",year:"2016",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"6",turn:"-2",fade:"2"},
+  {id:76,name:"Colossus",manufacturer:"Innova",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"14",glide:"5",turn:"-1",fade:"3"},
+  {id:77,name:"Sidewinder",manufacturer:"Innova",year:"2004",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"5",turn:"-3",fade:"1"},
+  {id:78,name:"Teebird",manufacturer:"Innova",year:"1999",inProduction:"Yes",type:"Fairway Driver",speed:"7",glide:"5",turn:"0",fade:"2"},
+  {id:80,name:"Pig",manufacturer:"Innova",year:"2008",inProduction:"Yes",type:"Midrange",speed:"4",glide:"1",turn:"0",fade:"3"},
+  {id:81,name:"Polecat",manufacturer:"Innova",year:"1994",inProduction:"Yes",type:"Putter",speed:"1",glide:"3",turn:"0",fade:"0"},
+  {id:82,name:"Ape",manufacturer:"Innova",year:"2011",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"0",fade:"4"},
+  {id:83,name:"Groove",manufacturer:"Discraft",year:"2020",inProduction:"Yes",type:"Putter",speed:"3",glide:"4",turn:"-1",fade:"0"},
+  {id:84,name:"Rollo",manufacturer:"Innova",year:"2023",inProduction:"Yes",type:"Midrange",speed:"5",glide:"6",turn:"-4",fade:"1"},
+  {id:85,name:"Colt",manufacturer:"Discraft",year:"2018",inProduction:"Yes",type:"Putter",speed:"3",glide:"4",turn:"0",fade:"1"},
+  {id:86,name:"Drone",manufacturer:"Discraft",year:"1997",inProduction:"Yes",type:"Midrange",speed:"4",glide:"3",turn:"0",fade:"4"},
+  {id:87,name:"Heat",manufacturer:"Discraft",year:"2009",inProduction:"Yes",type:"Fairway Driver",speed:"9",glide:"6",turn:"-3",fade:"1"},
+  {id:88,name:"Surge SS",manufacturer:"Discraft",year:"2009",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"5",turn:"-2",fade:"2"},
+  {id:89,name:"Nuke SS",manufacturer:"Discraft",year:"2010",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"5",turn:"-3",fade:"1"},
+  {id:90,name:"Thrasher",manufacturer:"Discraft",year:"2017",inProduction:"Yes",type:"Distance Driver",speed:"12",glide:"6",turn:"-3",fade:"1"},
+  {id:91,name:"Archer",manufacturer:"Dynamic Discs",year:"2019",inProduction:"Yes",type:"Fairway Driver",speed:"8",glide:"5",turn:"-1",fade:"2"},
+  {id:92,name:"Enforcer",manufacturer:"Dynamic Discs",year:"2017",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"5",turn:"0",fade:"4"},
+  {id:93,name:"Warden",manufacturer:"Dynamic Discs",year:"2014",inProduction:"Yes",type:"Putter",speed:"2",glide:"4",turn:"0",fade:"1"},
+  {id:94,name:"Witness",manufacturer:"Dynamic Discs",year:"2020",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"-2",fade:"1"},
+  {id:95,name:"Felon",manufacturer:"Dynamic Discs",year:"2015",inProduction:"Yes",type:"Distance Driver",speed:"9",glide:"4",turn:"0",fade:"4"},
+  {id:96,name:"Convict",manufacturer:"Dynamic Discs",year:"2016",inProduction:"Yes",type:"Distance Driver",speed:"11",glide:"5",turn:"-1",fade:"3"},
+  {id:97,name:"Token",manufacturer:"Dynamic Discs",year:"2021",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"2"},
+  {id:98,name:"Renegade",manufacturer:"Dynamic Discs",year:"2018",inProduction:"Yes",type:"Distance Driver",speed:"13",glide:"6",turn:"-2",fade:"2"},
+  {id:99,name:"Slammer",manufacturer:"Dynamic Discs",year:"2017",inProduction:"Yes",type:"Putter",speed:"2",glide:"3",turn:"0",fade:"3"},
+  {id:100,name:"Reactor",manufacturer:"MVP Disc Sports",year:"2020",inProduction:"Yes",type:"Midrange",speed:"5",glide:"5",turn:"-0.5",fade:"1"},
 ];
 
-async function fetchWithFallback() {
-  for (const url of PROXY_URLS) {
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (text && text.includes('Disc Name')) return text;
-    } catch(e) {
-      continue;
-    }
-  }
-  throw new Error('All fetch attempts failed');
-}
+// ============================================================
+//  INIT — no fetch needed, data is embedded above
+// ============================================================
+function init() {
+  DISCS = DISC_DATA.map(d => ({
+    id: d.id,
+    name: d.name,
+    manufacturer: d.manufacturer,
+    year: d.year,
+    inProduction: d.inProduction,
+    type: d.type,
+    speed: d.speed,
+    glide: d.glide,
+    turn: d.turn,
+    fade: d.fade,
+    signature: d.signature || '',
+    plastics: d.plastics || '',
+  }));
 
-async function init() {
-  try {
-    const text = await fetchWithFallback();
-    const rows = parseCSV(text);
-    DISCS = rows.map(normalizeDisc).filter(d => d.name);
+  const todayIdx = getDayIndex(getTodayStr());
+  todayDisc = DISCS[todayIdx % DISCS.length];
 
-    if (DISCS.length === 0) throw new Error('No discs found');
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('gameContent').style.display = 'block';
 
-    const todayIdx = getDayIndex(getTodayStr());
-    todayDisc = DISCS[todayIdx % DISCS.length];
-
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('gameContent').style.display = 'block';
-
-    const state = loadDayState(todayIdx);
-    renderGame(todayDisc, state, todayIdx);
-
-  } catch (err) {
-    document.getElementById('loadingScreen').innerHTML = `
-      <div style="text-align:center;padding:20px;">
-        <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--orange);margin-bottom:8px;">Couldn't load discs</div>
-        <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px;">Make sure your Google Sheet is published to the web.</div>
-        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:16px;">Error: ${err.message}</div>
-        <button onclick="init()" style="margin-top:4px;padding:10px 20px;background:var(--orange);color:white;border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer;">Retry</button>
-      </div>
-    `;
-  }
+  const state = loadDayState(todayIdx);
+  renderGame(todayDisc, state, todayIdx);
 }
 
 init();
