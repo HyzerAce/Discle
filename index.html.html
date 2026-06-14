@@ -508,7 +508,6 @@
 // ============================================================
 //  CONFIG
 // ============================================================
-const SHEET_URL = "https://corsproxy.io/?url=" + encodeURIComponent("https://docs.google.com/spreadsheets/d/e/2PACX-1vRemO01NETLRg38BMSFYBSbWYweVqJ7W33_JDrU7szPV1DF8T6UVoh4nELteKTXpm3UQxrLFoh78CCA/pub?gid=0&single=true&output=csv");
 // Change this to your actual launch date when ready
 const LAUNCH_DATE = "2025-01-01";
 
@@ -1098,13 +1097,34 @@ function exitArchiveMode() {
 }
 
 // ============================================================
-//  INIT — FETCH SHEET DATA
+//  INIT — FETCH SHEET DATA (with multiple proxy fallbacks)
 // ============================================================
+const RAW_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRemO01NETLRg38BMSFYBSbWYweVqJ7W33_JDrU7szPV1DF8T6UVoh4nELteKTXpm3UQxrLFoh78CCA/pub?gid=0&single=true&output=csv";
+
+const PROXY_URLS = [
+  RAW_SHEET_URL,
+  `https://corsproxy.io/?url=${encodeURIComponent(RAW_SHEET_URL)}`,
+  `https://api.allorigins.win/raw?url=${encodeURIComponent(RAW_SHEET_URL)}`,
+  `https://thingproxy.freeboard.io/fetch/${RAW_SHEET_URL}`,
+];
+
+async function fetchWithFallback() {
+  for (const url of PROXY_URLS) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text && text.includes('Disc Name')) return text;
+    } catch(e) {
+      continue;
+    }
+  }
+  throw new Error('All fetch attempts failed');
+}
+
 async function init() {
   try {
-    const res = await fetch(SHEET_URL);
-    if (!res.ok) throw new Error('Sheet fetch failed');
-    const text = await res.text();
+    const text = await fetchWithFallback();
     const rows = parseCSV(text);
     DISCS = rows.map(normalizeDisc).filter(d => d.name);
 
@@ -1124,8 +1144,9 @@ async function init() {
       <div style="text-align:center;padding:20px;">
         <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--orange);margin-bottom:8px;">Couldn't load discs</div>
-        <div style="font-size:0.82rem;color:var(--text-muted);">Check that your Google Sheet is published to the web and try refreshing.</div>
-        <button onclick="init()" style="margin-top:16px;padding:10px 20px;background:var(--orange);color:white;border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer;">Retry</button>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px;">Make sure your Google Sheet is published to the web.</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:16px;">Error: ${err.message}</div>
+        <button onclick="init()" style="margin-top:4px;padding:10px 20px;background:var(--orange);color:white;border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;cursor:pointer;">Retry</button>
       </div>
     `;
   }
